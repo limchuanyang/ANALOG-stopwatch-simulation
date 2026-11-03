@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPM KSSM Physics - Mechanical Stopwatch Reading Trainer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .digital-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* Glassmorphism styling */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom metallic watch body effect */
+        .stopwatch-casing {
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 35%, #64748b 70%, #334155 100%);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+        }
+        .dial-face {
+            background: radial-gradient(circle, #ffffff 85%, #f1f5f9 100%);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.3);
+        }
+        /* Interactive pulse for crown */
+        .crown-btn:active {
+            transform: translateY(3px) scale(0.98);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header / Navbar -->
+    <header class="w-full glass-panel border-b border-slate-700/50 py-4 px-6 mb-6">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-stopwatch text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+                        SPM Physics: Mechanical Stopwatch Trainer
+                    </h1>
+                    <p class="text-xs text-slate-400">Teknik Membaca Jam Saat Analog (Kepekaan 0.1s)</p>
+                </div>
+            </div>
+
+            <!-- Single Unified Action: Randomize Reading -->
+            <button onclick="generateRandomTarget()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg transition flex items-center gap-2">
+                <i class="fa-solid fa-shuffle"></i> Randomize Reading (Soalan Baharu)
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto w-full px-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8">
+        
+        <!-- Left Column: Stopwatch Visual Representation -->
+        <div class="lg:col-span-6 flex flex-col items-center justify-center">
+            
+            <!-- Zoom Magnifier Toggle Control -->
+            <div class="w-full max-w-[440px] flex justify-between items-center mb-2 px-2">
+                <span class="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-microscope text-blue-400"></i> High-Precision Reading View
+                </span>
+                <button id="zoomToggleBtn" onclick="toggleZoomMode()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-blue-300 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-magnifying-glass"></i> <span id="zoomToggleText">Enable Zoom Glass</span>
+                </button>
+            </div>
+
+            <!-- Stopwatch Container -->
+            <div id="stopwatchContainer" class="relative w-full max-w-[440px] aspect-square flex items-center justify-center my-2 cursor-crosshair">
+                
+                <!-- Metallic Loop / Ring at Top -->
+                <div class="absolute -top-7 w-24 h-24 rounded-full border-[7px] border-slate-300 shadow-xl z-0"></div>
+                <div class="absolute -top-4 w-12 h-6 bg-slate-400 rounded-t-md border-t border-slate-200 z-0"></div>
+
+                <!-- Main Top Crown Button (Start / Stop) -->
+                <button onclick="toggleStartStop()" title="Click Crown to Start/Stop" 
+                        class="crown-btn absolute -top-11 z-20 w-14 h-10 bg-gradient-to-r from-slate-400 via-slate-200 to-slate-400 rounded-t-lg border border-slate-300 shadow-md cursor-pointer group flex items-center justify-center">
+                    <span class="w-full h-1 bg-slate-500/40 block"></span>
+                </button>
+
+                <!-- Left Winder / Reset Button -->
+                <button onclick="resetStopwatch()" title="Click to Reset Stopwatch" 
+                        class="crown-btn absolute top-12 left-2 -rotate-45 z-20 w-10 h-10 bg-gradient-to-r from-slate-400 via-slate-200 to-slate-400 rounded-lg border border-slate-300 shadow-lg cursor-pointer flex items-center justify-center">
+                    <span class="text-[10px] font-bold text-slate-700">RESET</span>
+                </button>
+
+                <!-- Casing -->
+                <div class="stopwatch-casing relative w-full h-full rounded-full p-6 flex items-center justify-center z-10">
+                    
+                    <!-- Inner Dial Face -->
+                    <div class="dial-face relative w-full h-full rounded-full flex items-center justify-center border-4 border-slate-300 overflow-hidden">
+                        
+                        <!-- Canvas for Dial Markings and Hands -->
+                        <canvas id="stopwatchCanvas" width="800" height="800" class="w-full h-full object-contain"></canvas>
+
+                        <!-- Magnifier Glass Overlay (Activates when enabled) -->
+                        <div id="magnifierGlass" class="hidden absolute w-48 h-48 rounded-full border-4 border-blue-500/80 shadow-2xl pointer-events-none z-30 bg-white overflow-hidden" style="box-shadow: 0 0 25px rgba(59, 130, 246, 0.5), inset 0 0 15px rgba(0,0,0,0.2);">
+                            <canvas id="magnifierCanvas" width="300" height="300" class="w-full h-full"></canvas>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Control Bar -->
+            <div class="flex items-center gap-4 mt-3">
+                <button id="startStopBtn" onclick="toggleStartStop()" class="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg shadow-emerald-900/40 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-play" id="startIcon"></i> <span id="startText">Start</span>
+                </button>
+                <button onclick="resetStopwatch()" class="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 font-bold text-white shadow-lg shadow-rose-900/40 transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400 mt-3 text-center">
+                <i class="fa-solid fa-hand-pointer mr-1"></i> Press Top Crown or Start Button to run. Hover over watch to magnify scale ticks!
+            </p>
+        </div>
+
+        <!-- Right Column: Interactive Quiz & Self-Check Panel -->
+        <div class="lg:col-span-6 flex flex-col gap-6">
+            
+            <!-- SPM ANSWER INPUT BOX - PROMINENTLY PLACED & ALWAYS VISIBLE -->
+            <div class="glass-panel p-6 rounded-2xl border-2 border-amber-500/60 shadow-2xl bg-slate-900/90 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="p-2 bg-amber-500 text-slate-950 font-black rounded-lg text-xs tracking-wider uppercase">Input Here</span>
+                        <h2 class="text-lg font-extrabold text-amber-300">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i> Key In Your Answer (Tulis Jawapan)
+                        </h2>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 bg-slate-800 text-slate-300 rounded-md border border-slate-700">
+                        Kepekaan: 0.1 s
+                    </span>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Read the stopwatch hands on the left and enter your readings below:
+                </p>
+
+                <!-- Big Input Fields -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-950 p-3.5 rounded-xl border-2 border-blue-500/50 hover:border-blue-400 transition">
+                        <label class="block text-xs font-bold text-blue-300 mb-1 flex items-center justify-between">
+                            <span>1. MINUTE HAND</span>
+                            <span class="text-[10px] text-slate-400 font-normal">(Jam Kecil)</span>
+                        </label>
+                        <div class="relative flex items-center">
+                            <input type="number" id="inputMin" placeholder="0" min="0" max="30" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-2xl font-extrabold text-white focus:outline-none focus:border-amber-400 text-center font-mono">
+                            <span class="absolute right-3 text-sm font-bold text-slate-400">min</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-950 p-3.5 rounded-xl border-2 border-emerald-500/50 hover:border-emerald-400 transition">
+                        <label class="block text-xs font-bold text-emerald-300 mb-1 flex items-center justify-between">
+                            <span>2. SECOND HAND</span>
+                            <span class="text-[10px] text-slate-400 font-normal">(Jam Utama)</span>
+                        </label>
+                        <div class="relative flex items-center">
+                            <input type="number" id="inputSec" step="0.1" placeholder="0.0" min="0" max="59.9" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-2xl font-extrabold text-white focus:outline-none focus:border-amber-400 text-center font-mono">
+                            <span class="absolute right-3 text-sm font-bold text-slate-400">s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-1">
+                    <button onclick="checkAnswer()" class="flex-1 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base rounded-xl shadow-lg transition flex justify-center items-center gap-2 transform active:scale-95">
+                        <i class="fa-solid fa-circle-check text-xl"></i> CHECK MY ANSWER
+                    </button>
+                    <button onclick="revealSolution()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold rounded-xl border border-slate-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-lightbulb text-amber-400"></i> Show Answer
+                    </button>
+                </div>
+
+                <!-- Answer Result / Feedback Box -->
+                <div id="feedbackBox" class="hidden p-4 rounded-xl border transition-all mt-2">
+                    <!-- Dynamic Feedback Content injected via JS -->
+                </div>
+            </div>
+
+            <!-- Single Unified SPM Physics Reading Guide Panel -->
+            <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-5">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <h2 class="text-lg font-bold text-blue-400 flex items-center gap-2">
+                        <i class="fa-solid fa-eye"></i> SPM Physics Reading Guide
+                    </h2>
+                    <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-semibold">
+                        Kepekaan: 0.1 s
+                    </span>
+                </div>
+
+                <!-- Live Reading Callout matching Cikgu LimCY's Diagram format -->
+                <div class="grid grid-cols-2 gap-3 bg-slate-900/90 p-4 rounded-xl border border-slate-800">
+                    <div class="border-r border-slate-800 pr-3">
+                        <span class="text-xs text-slate-400 block">Minute Hand Reading:</span>
+                        <div id="liveMinRead" class="text-xl font-bold text-blue-400 font-mono">0 min</div>
+                        <span class="text-[11px] text-slate-500">(Sub-dial scale: 0-30 min)</span>
+                    </div>
+                    <div class="pl-2">
+                        <span class="text-xs text-slate-400 block">Second Hand Reading:</span>
+                        <div id="liveSecRead" class="text-xl font-bold text-emerald-400 font-mono">0.0 s</div>
+                        <span class="text-[11px] text-slate-500">(1 small div = 0.1 s)</span>
+                    </div>
+                </div>
+
+                <!-- How to Read Tutorial Section -->
+                <div class="space-y-3 bg-slate-800/50 p-4 rounded-xl border border-slate-700/60">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-yellow-400"></i> SPM Physics Marking Criteria (Format Bacaan):
+                    </h3>
+                    <ul class="text-xs text-slate-300 space-y-2 leading-relaxed list-disc list-inside">
+                        <li><strong class="text-amber-300">Langkah 1 (Jarum Minit):</strong> Lihat jarum di muka jam kecil. Catatkan nilai minit terkecil yang telah dilewati (contoh: <code>0 min</code>).</li>
+                        <li><strong class="text-amber-300">Langkah 2 (Jarum Saat):</strong> Lihat jarum di muka jam utama. Setiap senggatan kecil bernilai <strong>0.1 s</strong>. Baca saat utama + senggatan (contoh: <code>6.0 s</code>).</li>
+                        <li><strong class="text-amber-300">Langkah 3 (Keputusan Akhir):</strong> Campurkan minit dan saat. Contoh penulisan jawapan SPM: <span class="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-300">6.0 s</span> atau <span class="font-mono bg-slate-900 px-2 py-0.5 rounded text-blue-300">0 min 6.0 s</span>.</li>
+                        <li><strong class="text-amber-300">Kepekaan (Sensitivity):</strong> Wajib ditulis sehingga <strong>1 tempat perpuluhan (0.1 s)</strong>.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Score & Progress Stats -->
+            <div class="glass-panel p-4 rounded-2xl flex justify-around items-center text-center">
+                <div>
+                    <span class="text-xs text-slate-400 block">Total Practiced</span>
+                    <span id="statAttempted" class="text-xl font-bold text-slate-200">0</span>
+                </div>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <div>
+                    <span class="text-xs text-slate-400 block">Correct Answers</span>
+                    <span id="statCorrect" class="text-xl font-bold text-emerald-400">0</span>
+                </div>
+                <div class="h-8 w-px bg-slate-700"></div>
+                <div>
+                    <span class="text-xs text-slate-400 block">Accuracy</span>
+                    <span id="statAccuracy" class="text-xl font-bold text-blue-400">0%</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        Aligned with SPM KSSM Physics Practical Format • Kepekaan Jam Saat Analog = 0.1 s
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Variables
+        let isRunning = false;
+        let startTime = 0;
+        let elapsedTime = 0; // In milliseconds
+        let timerInterval = null;
+        let isZoomEnabled = false;
+
+        // Quiz / Self-Check State
+        let targetTimeMs = 0;
+        let questionCount = 0;
+        let correctCount = 0;
+        let attemptedCount = 0;
+
+        // Canvas & Magnifier Contexts
+        const canvas = document.getElementById('stopwatchCanvas');
+        const ctx = canvas.getContext('2d');
+        const magCanvas = document.getElementById('magnifierCanvas');
+        const magCtx = magCanvas.getContext('2d');
+        const magnifierGlass = document.getElementById('magnifierGlass');
+        const container = document.getElementById('stopwatchContainer');
+
+        // Initialize App on Page Load
+        window.onload = () => {
+            setupMagnifier();
+            drawStopwatch(0);
+        };
+
+        // Magnifier / Zoom feature implementation
+        function setupMagnifier() {
+            container.addEventListener('mousemove', (e) => {
+                if (!isZoomEnabled) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                if (mouseX >= 0 && mouseX <= rect.width && mouseY >= 0 && mouseY <= rect.height) {
+                    magnifierGlass.classList.remove('hidden');
+                    magnifierGlass.style.left = `${mouseX - 96}px`;
+                    magnifierGlass.style.top = `${mouseY - 96}px`;
+
+                    // Render zoomed view into magnifier canvas
+                    const canvasRatio = canvas.width / rect.width;
+                    const srcX = mouseX * canvasRatio;
+                    const srcY = mouseY * canvasRatio;
+                    const srcWidth = 180;
+                    const srcHeight = 180;
+
+                    magCtx.clearRect(0, 0, magCanvas.width, magCanvas.height);
+                    magCtx.drawImage(
+                        canvas,
+                        srcX - srcWidth / 2, srcY - srcHeight / 2, srcWidth, srcHeight,
+                        0, 0, magCanvas.width, magCanvas.height
+                    );
+                } else {
+                    magnifierGlass.classList.add('hidden');
+                }
+            });
+
+            container.addEventListener('mouseleave', () => {
+                magnifierGlass.classList.add('hidden');
+            });
+        }
+
+        function toggleZoomMode() {
+            isZoomEnabled = !isZoomEnabled;
+            const btnText = document.getElementById('zoomToggleText');
+            const btn = document.getElementById('zoomToggleBtn');
+            
+            if (isZoomEnabled) {
+                btnText.innerText = "Disable Zoom Glass";
+                btn.className = "px-3 py-1 bg-blue-600 text-xs font-semibold text-white rounded-lg shadow transition flex items-center gap-1.5";
+            } else {
+                btnText.innerText = "Enable Zoom Glass";
+                btn.className = "px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-blue-300 rounded-lg border border-slate-700 transition flex items-center gap-1.5";
+                magnifierGlass.classList.add('hidden');
+            }
+        }
+
+        // Render Analog Stopwatch Face - Faithful Replica of Physical SPM Stopwatch
+        function drawStopwatch(ms) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = width * 0.44;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Draw Dial Outer Rim & Background
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+
+            // 2. Draw Outer Seconds Dial (0 to 60 seconds) - 10 divisions per second (0.1s resolution)
+            // Major marks (1s), Medium marks (0.5s), Small marks (0.1s)
+            for (let i = 0; i < 60; i++) {
+                const angle = (i * 6 * Math.PI) / 180 - Math.PI / 2;
+                
+                // 1-Second Major Tick Marks
+                const tickOuter = radius - 10;
+                const tickInner = radius - 32;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX + tickOuter * Math.cos(angle), centerY + tickOuter * Math.sin(angle));
+                ctx.lineTo(centerX + tickInner * Math.cos(angle), centerY + tickInner * Math.sin(angle));
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = (i % 5 === 0 && (i / 5) % 3 === 0) ? "#dc2626" : "#0f172a"; 
+                ctx.stroke();
+
+                // Outer Numbers (5, 10, 15, ..., 60)
+                if (i % 5 === 0) {
+                    const numberVal = i === 0 ? 60 : i;
+                    const textRadius = radius - 58;
+                    const textX = centerX + textRadius * Math.cos(angle);
+                    const textY = centerY + textRadius * Math.sin(angle);
+
+                    ctx.font = "bold 38px Inter, sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    // Red color for 60, 15, 30, 45 (matching Cikgu LimCY's physics picture)
+                    ctx.fillStyle = (numberVal % 15 === 0) ? "#dc2626" : "#0f172a";
+                    ctx.fillText(numberVal.toString(), textX, textY);
+                }
+
+                // 10 Sub-ticks per second (Each tick = 0.1s)
+                for (let j = 1; j < 10; j++) {
+                    const subAngle = angle + (j * 0.6 * Math.PI) / 180;
+                    const isHalfSec = (j === 5);
+                    const subOuter = radius - 10;
+                    const subInner = isHalfSec ? radius - 24 : radius - 18;
+
+                    ctx.beginPath();
+                    ctx.moveTo(centerX + subOuter * Math.cos(subAngle), centerY + subOuter * Math.sin(subAngle));
+                    ctx.lineTo(centerX + subInner * Math.cos(subAngle), centerY + subInner * Math.sin(subAngle));
+                    ctx.lineWidth = isHalfSec ? 2.5 : 1.2;
+                    ctx.strokeStyle = isHalfSec ? "#1e293b" : "#475569";
+                    ctx.stroke();
+                }
+            }
+
+            // 3. Draw Sub-Dial for Minutes (0 to 30 Minutes)
+            const subCenterX = centerX;
+            const subCenterY = centerY - radius * 0.32;
+            const subRadius = radius * 0.38; // Enlarged sub-dial scale for maximum clarity
+
+            // Sub-dial background circle
+            ctx.beginPath();
+            ctx.arc(subCenterX, subCenterY, subRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#475569";
+            ctx.stroke();
+
+            // Minute Ticks & Numbers (0 to 30 mins)
+            for (let m = 0; m < 30; m++) {
+                const mAngle = (m * 12 * Math.PI) / 180 - Math.PI / 2;
+                const mOuter = subRadius - 2;
+                const mInner = (m % 5 === 0) ? subRadius - 16 : subRadius - 9;
+
+                ctx.beginPath();
+                ctx.moveTo(subCenterX + mOuter * Math.cos(mAngle), subCenterY + mOuter * Math.sin(mAngle));
+                ctx.lineTo(subCenterX + mInner * Math.cos(mAngle), subCenterY + mInner * Math.sin(mAngle));
+                ctx.lineWidth = (m % 5 === 0) ? 3.5 : 1.5;
+                ctx.strokeStyle = (m % 5 === 0 && (m / 5) % 2 === 0) ? "#dc2626" : "#0f172a";
+                ctx.stroke();
+
+                // Numbers (30/0, 5, 10, 15, 20, 25)
+                if (m % 5 === 0) {
+                    const displayM = (m === 0) ? "30" : m.toString();
+                    const mTextRad = subRadius - 30;
+                    const mTextX = subCenterX + mTextRad * Math.cos(mAngle);
+                    const mTextY = subCenterY + mTextRad * Math.sin(mAngle);
+
+                    ctx.font = "bold 24px Inter, sans-serif"; 
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    // 30 and 15 marked in red matching standard physics laboratory watches
+                    ctx.fillStyle = (m === 0 || m === 15) ? "#dc2626" : "#0f172a";
+                    ctx.fillText(displayM, mTextX, mTextY);
+                }
+            }
+
+            // Dial Logo / Branding Text matching photo
+            ctx.font = "600 16px Inter, sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.textAlign = "center";
+            ctx.fillText("13 JEWELS", centerX, centerY + radius * 0.40);
+            ctx.font = "bold 16px Inter, sans-serif";
+            ctx.fillStyle = "#dc2626";
+            ctx.fillText("1/10 s", centerX, centerY + radius * 0.48);
+
+            // 4. Pointer Positions Calculation
+            const totalSeconds = ms / 1000;
+            const secondsHandVal = totalSeconds % 60;
+            const minutesHandVal = (totalSeconds / 60) % 30;
+
+            // Minute Hand (Inner Sub-dial)
+            const minAngle = (minutesHandVal * 12 * Math.PI) / 180 - Math.PI / 2;
+            
+            ctx.save();
+            ctx.translate(subCenterX, subCenterY);
+            ctx.rotate(minAngle + Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(0, 8);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(0, -subRadius + 18);
+            ctx.lineTo(5, 0);
+            ctx.closePath();
+            ctx.fillStyle = "#0f172a";
+            ctx.fill();
+            ctx.restore();
+
+            // Minute Hand Center Cap
+            ctx.beginPath();
+            ctx.arc(subCenterX, subCenterY, 7, 0, 2 * Math.PI);
+            ctx.fillStyle = "#0f172a";
+            ctx.fill();
+
+            // Second Hand Angle (Main Outer Dial)
+            const secAngle = (secondsHandVal * 6 * Math.PI) / 180 - Math.PI / 2;
+
+            // Draw Second Hand (Long Pointer with Anchor Tail)
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(secAngle + Math.PI / 2);
+
+            // Long Needle
+            ctx.beginPath();
+            ctx.moveTo(0, 32); 
+            ctx.lineTo(-4, 0);
+            ctx.lineTo(-0.8, -radius + 18);
+            ctx.lineTo(0.8, -radius + 18);
+            ctx.lineTo(4, 0);
+            ctx.closePath();
+            ctx.fillStyle = "#0f172a";
+            ctx.fill();
+
+            // Anchor/Ring Counterweight at bottom of second hand
+            ctx.beginPath();
+            ctx.arc(0, 24, 7, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#0f172a";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Main Center Cap
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = "#eab308";
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#0f172a";
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 3.5, 0, 2 * Math.PI);
+            ctx.fillStyle = "#0f172a";
+            ctx.fill();
+
+            // Update live callout text in free mode
+            const liveMin = Math.floor(minutesHandVal);
+            const liveSec = secondsHandVal.toFixed(1);
+            document.getElementById('liveMinRead').innerText = `${liveMin} min`;
+            document.getElementById('liveSecRead').innerText = `${liveSec} s`;
+        }
+
+        // Timer Logic Functions
+        function toggleStartStop() {
+            if (isRunning) {
+                // Stop Timer
+                clearInterval(timerInterval);
+                isRunning = false;
+                document.getElementById('startText').innerText = "Start";
+                document.getElementById('startIcon').className = "fa-solid fa-play";
+                document.getElementById('startStopBtn').className = "px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg transition flex items-center gap-2";
+            } else {
+                // Start Timer
+                startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(updateTimer, 30);
+                isRunning = true;
+                document.getElementById('startText').innerText = "Stop";
+                document.getElementById('startIcon').className = "fa-solid fa-pause";
+                document.getElementById('startStopBtn').className = "px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 font-bold text-white shadow-lg transition flex items-center gap-2";
+            }
+        }
+
+        function resetStopwatch() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                document.getElementById('startText').innerText = "Start";
+                document.getElementById('startIcon').className = "fa-solid fa-play";
+                document.getElementById('startStopBtn').className = "px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-lg transition flex items-center gap-2";
+            }
+            
+            elapsedTime = 0;
+            drawStopwatch(elapsedTime);
+        }
+
+        function updateTimer() {
+            elapsedTime = Date.now() - startTime;
+            drawStopwatch(elapsedTime);
+        }
+
+        // Randomize stopwatch reading position for practice
+        function generateRandomTarget() {
+            if (isRunning) toggleStartStop();
+
+            const randomMin = Math.floor(Math.random() * 4); // 0 to 3 minutes
+            const randomSec = Math.floor(Math.random() * 599) / 10; // 0.0 to 59.9s in 0.1s steps
+            
+            targetTimeMs = (randomMin * 60 + randomSec) * 1000;
+            elapsedTime = targetTimeMs;
+
+            drawStopwatch(targetTimeMs);
+
+            document.getElementById('inputMin').value = "";
+            document.getElementById('inputSec').value = "";
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.className = "hidden p-4 rounded-xl border transition-all";
+
+            questionCount++;
+        }
+
+        function checkAnswer() {
+            const inputMinVal = parseInt(document.getElementById('inputMin').value || "0", 10);
+            const inputSecVal = parseFloat(document.getElementById('inputSec').value || "0");
+
+            const actualTotalSec = elapsedTime / 1000;
+            const actualMin = Math.floor(actualTotalSec / 60) % 30;
+            const actualSec = parseFloat((actualTotalSec % 60).toFixed(1));
+
+            const studentTotalSec = (inputMinVal * 60) + inputSecVal;
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.classList.remove('hidden');
+
+            attemptedCount++;
+
+            // Check exact match within 0.1s tolerance
+            const isCorrect = Math.abs(studentTotalSec - actualTotalSec) <= 0.11 && (inputMinVal === actualMin);
+
+            if (isCorrect) {
+                correctCount++;
+                feedbackBox.className = "p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 space-y-2";
+                feedbackBox.innerHTML = `
+                    <div class="flex items-center gap-2 font-bold text-emerald-400">
+                        <i class="fa-solid fa-circle-check text-lg"></i> Correct Reading! (Tahniah!)
+                    </div>
+                    <p class="text-xs">
+                        Exact Reading: <strong>${actualMin} min ${actualSec.toFixed(1)} s</strong> (Total: ${actualTotalSec.toFixed(1)} s).
+                        Great job reading both the inner minute dial and 0.1s outer second dial!
+                    </p>
+                `;
+            } else {
+                feedbackBox.className = "p-4 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 space-y-2";
+                feedbackBox.innerHTML = `
+                    <div class="flex items-center gap-2 font-bold text-rose-400">
+                        <i class="fa-solid fa-circle-xmark text-lg"></i> Incorrect Reading (Cuba Lagi)
+                    </div>
+                    <p class="text-xs">
+                        Your Input: <strong>${inputMinVal} min ${inputSecVal.toFixed(1)} s</strong><br>
+                        Correct SPM Reading: <strong class="text-amber-300">${actualMin} min ${actualSec.toFixed(1)} s</strong>
+                    </p>
+                    <div class="text-[11px] bg-slate-900/80 p-2.5 rounded border border-slate-700/60 space-y-1">
+                        <span class="font-semibold text-blue-300 block">SPM Step-by-Step Breakdown:</span>
+                        1. Minute Hand: Points to <strong>${actualMin} min</strong> on sub-dial.<br>
+                        2. Second Hand: Points to <strong>${actualSec.toFixed(1)} s</strong> on main dial (each small tick = 0.1s).<br>
+                        3. Recorded Value: <strong>${actualMin > 0 ? actualMin + ' min ' : ''}${actualSec.toFixed(1)} s</strong>.
+                    </div>
+                `;
+            }
+
+            updateStats();
+        }
+
+        function revealSolution() {
+            const actualTotalSec = elapsedTime / 1000;
+            const actualMin = Math.floor(actualTotalSec / 60) % 30;
+            const actualSec = parseFloat((actualTotalSec % 60).toFixed(1));
+
+            document.getElementById('inputMin').value = actualMin;
+            document.getElementById('inputSec').value = actualSec.toFixed(1);
+
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.classList.remove('hidden');
+            feedbackBox.className = "p-4 rounded-xl bg-amber-950/60 border border-amber-500/50 text-amber-200 space-y-2";
+            feedbackBox.innerHTML = `
+                <div class="flex items-center gap-2 font-bold text-amber-400">
+                    <i class="fa-solid fa-lightbulb"></i> Solution Revealed
+                </div>
+                <p class="text-xs">
+                    Minute Hand = <strong>${actualMin} min</strong> | Second Hand = <strong>${actualSec.toFixed(1)} s</strong>
+                </p>
+            `;
+        }
+
+        function updateStats() {
+            document.getElementById('statAttempted').innerText = attemptedCount;
+            document.getElementById('statCorrect').innerText = correctCount;
+            const accuracy = attemptedCount > 0 ? Math.round((correctCount / attemptedCount) * 100) : 0;
+            document.getElementById('statAccuracy').innerText = `${accuracy}%`;
+        }
+    </script>
+</body>
+</html>
